@@ -1,0 +1,731 @@
+{
+  "info": {
+    "_postman_id": "80c9c261-bf77-4ce0-bb30-b1c2c367e743",
+    "name": "E2E_UserJourney",
+    "description": "End-to-End User Journey Test Collection.\n\nThis collection demonstrates:\n- Complete user lifecycle testing\n- Authentication flow validation\n- Business workflow testing\n- Cross-API integration tests (GoRest, JSONPlaceholder, ReqRes)\n\nAuthor: Priyanka Arora\nVersion: 1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "32117335"
+  },
+  "item": [
+    {
+      "name": "User Lifecycle Journey",
+      "item": [
+        {
+          "name": "Journey Start: Register New User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique user for E2E journey",
+                  "const timestamp = Date.now();",
+                  "const journeyEmail = `e2e.journey.${timestamp}@automation.test`;",
+                  "pm.collectionVariables.set('e2eUserEmail', journeyEmail);",
+                  "",
+                  "console.log('[E2E JOURNEY] Starting user lifecycle test');",
+                  "console.log(`[E2E JOURNEY] User email: ${journeyEmail}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User registration successful (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('User receives unique ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.be.a('number');",
+                  "    pm.expect(jsonData.id).to.be.above(0);",
+                  "});",
+                  "",
+                  "pm.test('User is created as active', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('active');",
+                  "});",
+                  "",
+                  "// Store for journey continuation",
+                  "const userData = pm.response.json();",
+                  "pm.collectionVariables.set('e2eUserId', userData.id);",
+                  "pm.environment.set('e2eUserId', userData.id);",
+                  "",
+                  "console.log(`[E2E JOURNEY] User registered with ID: ${userData.id}`);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"E2E Journey Test User\",\n    \"email\": \"{{e2eUserEmail}}\",\n    \"gender\": \"female\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey: View User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile retrieved successfully (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Profile matches registration data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.equal('E2E Journey Test User');",
+                  "    pm.expect(jsonData.gender).to.equal('female');",
+                  "    pm.expect(jsonData.status).to.equal('active');",
+                  "});",
+                  "",
+                  "pm.test('Email matches registered email', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedEmail = pm.collectionVariables.get('e2eUserEmail');",
+                  "    pm.expect(jsonData.email).to.equal(expectedEmail);",
+                  "});",
+                  "",
+                  "console.log('[E2E JOURNEY] Profile view successful');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{e2eUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{e2eUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey: Update User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Profile updated successfully (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Name is updated', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.equal('E2E Journey User - Updated');",
+                  "});",
+                  "",
+                  "pm.test('User ID remains the same', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedId = parseInt(pm.collectionVariables.get('e2eUserId'));",
+                  "    pm.expect(jsonData.id).to.equal(expectedId);",
+                  "});",
+                  "",
+                  "console.log('[E2E JOURNEY] Profile updated successfully');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"E2E Journey User - Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{e2eUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{e2eUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey: User Creates First Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Post created successfully (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Post is linked to user', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedUserId = parseInt(pm.collectionVariables.get('e2eUserId'));",
+                  "    pm.expect(jsonData.user_id).to.equal(expectedUserId);",
+                  "});",
+                  "",
+                  "// Store post ID",
+                  "pm.collectionVariables.set('e2ePostId', pm.response.json().id);",
+                  "",
+                  "console.log('[E2E JOURNEY] User created first post');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": {{e2eUserId}},\n    \"title\": \"My First E2E Journey Post\",\n    \"body\": \"This is my first post as part of the end-to-end user journey testing. Testing the complete user experience from registration to content creation.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{e2eUserId}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{e2eUserId}}",
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey: Create Todo Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Todo created successfully (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Todo has correct structure', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('user_id');",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('due_on');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Todo status is pending', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('pending');",
+                  "});",
+                  "",
+                  "pm.collectionVariables.set('e2eTodoId', pm.response.json().id);",
+                  "",
+                  "console.log('[E2E JOURNEY] Todo task created');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": {{e2eUserId}},\n    \"title\": \"Complete E2E Journey Testing\",\n    \"due_on\": \"2026-12-31T00:00:00.000+05:30\",\n    \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{e2eUserId}}/todos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{e2eUserId}}",
+                "todos"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey: Complete Todo Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Todo updated successfully (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Todo status is completed', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('completed');",
+                  "});",
+                  "",
+                  "console.log('[E2E JOURNEY] Todo task completed');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"completed\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/todos/{{e2eTodoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "todos",
+                "{{e2eTodoId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey: View All User Activity",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User posts retrieved (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    pm.expect(pm.response.json()).to.be.an('array');",
+                  "});",
+                  "",
+                  "console.log('[E2E JOURNEY] User activity retrieved');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{e2eUserId}}/posts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{e2eUserId}}",
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey: Deactivate User Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Account deactivated successfully (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User status is inactive', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('inactive');",
+                  "});",
+                  "",
+                  "console.log('[E2E JOURNEY] Account deactivated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"inactive\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{e2eUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{e2eUserId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Journey End: Delete User Account",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Account deleted successfully (204)', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "// Cleanup",
+                  "pm.environment.unset('e2eUserId');",
+                  "",
+                  "console.log('[E2E JOURNEY] === JOURNEY COMPLETED SUCCESSFULLY ===');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{e2eUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "{{e2eUserId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Complete user lifecycle from registration to account deletion"
+    },
+    {
+      "name": "Cross-API Integration Tests",
+      "item": [
+        {
+          "name": "JSONPlaceholder - Get Posts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('JSONPlaceholder API is responsive (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns 100 posts', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.equal(100);",
+                  "});",
+                  "",
+                  "pm.test('Post structure is valid', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData[0]).to.have.property('userId');",
+                  "    pm.expect(jsonData[0]).to.have.property('id');",
+                  "    pm.expect(jsonData[0]).to.have.property('title');",
+                  "    pm.expect(jsonData[0]).to.have.property('body');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jsonPlaceholderUrl}}/posts",
+              "host": [
+                "{{jsonPlaceholderUrl}}"
+              ],
+              "path": [
+                "posts"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "JSONPlaceholder - Get Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Returns 10 users', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.length).to.equal(10);",
+                  "});",
+                  "",
+                  "pm.test('User has complex address structure', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData[0]).to.have.property('address');",
+                  "    pm.expect(jsonData[0].address).to.have.property('geo');",
+                  "    pm.expect(jsonData[0].address.geo).to.have.property('lat');",
+                  "    pm.expect(jsonData[0].address.geo).to.have.property('lng');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{jsonPlaceholderUrl}}/users",
+              "host": [
+                "{{jsonPlaceholderUrl}}"
+              ],
+              "path": [
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ReqRes - List Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('ReqRes API is responsive (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has pagination info', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('page');",
+                  "    pm.expect(jsonData).to.have.property('per_page');",
+                  "    pm.expect(jsonData).to.have.property('total');",
+                  "    pm.expect(jsonData).to.have.property('total_pages');",
+                  "    pm.expect(jsonData).to.have.property('data');",
+                  "});",
+                  "",
+                  "pm.test('User data has avatar URLs', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.data[0]).to.have.property('avatar');",
+                  "    pm.expect(jsonData.data[0].avatar).to.include('https://');",
+                  "});"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "x-api-key",
+                "value": "{{api-key}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{reqresUrl}}/users?page=1",
+              "host": [
+                "{{reqresUrl}}"
+              ],
+              "path": [
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "ReqRes - Login Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Token is returned', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('token');",
+                  "    pm.expect(jsonData.token).to.be.a('string');",
+                  "});",
+                  "",
+                  "console.log('[INTEGRATION] ReqRes login successful');"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "x-api-key",
+                "value": "{{api-key}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"eve.holt@reqres.in\",\n    \"password\": \"cityslicka\"\n}"
+            },
+            "url": {
+              "raw": "{{reqresUrl}}/login",
+              "host": [
+                "{{reqresUrl}}"
+              ],
+              "path": [
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ],
+      "description": "Cross-API integration tests with JSONPlaceholder and ReqRes"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// E2E Collection Pre-request",
+          "console.log(`[E2E] Starting: ${pm.info.requestName}`);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// E2E Collection Test - Performance Validation",
+          "pm.test('E2E: Response time is acceptable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "e2eUserId",
+      "value": ""
+    },
+    {
+      "key": "e2eUserEmail",
+      "value": ""
+    },
+    {
+      "key": "e2ePostId",
+      "value": ""
+    },
+    {
+      "key": "e2eTodoId",
+      "value": ""
+    }
+  ]
+}

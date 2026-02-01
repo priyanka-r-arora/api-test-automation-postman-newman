@@ -1,0 +1,906 @@
+{
+  "info": {
+    "_postman_id": "gorest-user-management-001",
+    "name": "GoRest_UserManagement",
+    "description": "Comprehensive API test collection for GoRest User Management endpoints.\n\nThis collection demonstrates:\n- CRUD operations for user management\n- Schema validation\n- Dynamic test data generation\n- Response time assertions\n- Status code validation\n\nAuthor: Priyanka Arora\nVersion: 1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Generate dynamic test data using faker-like logic",
+          "const generateRandomString = (length) => {",
+          "    const chars = 'abcdefghijklmnopqrstuvwxyz';",
+          "    let result = '';",
+          "    for (let i = 0; i < length; i++) {",
+          "        result += chars.charAt(Math.floor(Math.random() * chars.length));",
+          "    }",
+          "    return result;",
+          "};",
+          "",
+          "// Generate random first name",
+          "const firstNames = ['John', 'Jane', 'Michael', 'Emily', 'David', 'Sarah', 'Robert', 'Lisa', 'William', 'Jennifer'];",
+          "const lastNames = ['Smith', 'Johnson', 'Williams', 'Brown', 'Jones', 'Garcia', 'Miller', 'Davis', 'Rodriguez', 'Martinez'];",
+          "",
+          "const randomFirstName = firstNames[Math.floor(Math.random() * firstNames.length)];",
+          "const randomLastName = lastNames[Math.floor(Math.random() * lastNames.length)];",
+          "const randomName = `${randomFirstName} ${randomLastName}`;",
+          "",
+          "// Generate unique email with timestamp",
+          "const timestamp = Date.now();",
+          "const randomEmail = `test.${generateRandomString(5)}.${timestamp}@automation.test`;",
+          "",
+          "// Set dynamic variables for use in requests",
+          "pm.collectionVariables.set('dynamicName', randomName);",
+          "pm.collectionVariables.set('dynamicEmail', randomEmail);",
+          "pm.collectionVariables.set('timestamp', timestamp);",
+          "",
+          "// Log for debugging",
+          "console.log(`[PRE-REQUEST] Generated Name: ${randomName}`);",
+          "console.log(`[PRE-REQUEST] Generated Email: ${randomEmail}`);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Common assertions applied to all requests",
+          "",
+          "// Performance benchmark - Response time validation",
+          "const maxResponseTime = parseInt(pm.environment.get('maxResponseTime')) || 2000;",
+          "",
+          "pm.test(`Response time is less than ${maxResponseTime}ms`, function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(maxResponseTime);",
+          "});",
+          "",
+          "// Validate response headers",
+          "pm.test('x-request-id header is present', function () {",
+          "    pm.response.to.have.header('x-request-id');",
+          "});",
+          "",
+          "// Log response details for debugging",
+          "console.log(`[TEST] Response Status: ${pm.response.code}`);",
+          "console.log(`[TEST] Response Time: ${pm.response.responseTime}ms`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "dynamicName",
+      "value": ""
+    },
+    {
+      "key": "dynamicEmail",
+      "value": ""
+    },
+    {
+      "key": "timestamp",
+      "value": ""
+    },
+    {
+      "key": "createdUserId",
+      "value": ""
+    },
+    {
+      "key": "testUserId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Smoke Tests",
+      "item": [
+        {
+          "name": "Health Check - Get All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('API returns user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0);",
+                  "    ",
+                  "    // Store first user ID for subsequent tests",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.collectionVariables.set('testUserId', jsonData[0].id);",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Smoke test to verify the API is responsive and returning user data."
+          }
+        },
+        {
+          "name": "Smoke - Create User Quick Test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Quick validation that POST endpoint is working",
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('User is created with correct data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    ",
+                  "    // Store for cleanup",
+                  "    pm.collectionVariables.set('smokeTestUserId', jsonData.id);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"{{dynamicName}}\",\n    \"email\": \"{{dynamicEmail}}\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ],
+      "description": "Critical path tests for quick validation"
+    },
+    {
+      "name": "GET Operations",
+      "item": [
+        {
+          "name": "Get All Users - Default Pagination",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is a valid JSON array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Pagination headers are present', function () {",
+                  "    pm.response.to.have.header('x-pagination-total');",
+                  "    pm.response.to.have.header('x-pagination-pages');",
+                  "    pm.response.to.have.header('x-pagination-page');",
+                  "    pm.response.to.have.header('x-pagination-limit');",
+                  "});",
+                  "",
+                  "pm.test('Default pagination returns up to 10 users', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.length).to.be.at.most(10);",
+                  "});",
+                  "",
+                  "// Schema validation for user objects",
+                  "const userSchema = {",
+                  "    type: 'array',",
+                  "    items: {",
+                  "        type: 'object',",
+                  "        required: ['id', 'name', 'email', 'gender', 'status'],",
+                  "        properties: {",
+                  "            id: { type: 'integer' },",
+                  "            name: { type: 'string' },",
+                  "            email: { type: 'string', format: 'email' },",
+                  "            gender: { type: 'string', enum: ['male', 'female'] },",
+                  "            status: { type: 'string', enum: ['active', 'inactive'] }",
+                  "        }",
+                  "    }",
+                  "};",
+                  "",
+                  "pm.test('Response matches user schema', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.forEach((user) => {",
+                  "        pm.expect(user).to.have.property('id').that.is.a('number');",
+                  "        pm.expect(user).to.have.property('name').that.is.a('string');",
+                  "        pm.expect(user).to.have.property('email').that.is.a('string');",
+                  "        pm.expect(user).to.have.property('gender').that.is.oneOf(['male', 'female']);",
+                  "        pm.expect(user).to.have.property('status').that.is.oneOf(['active', 'inactive']);",
+                  "    });",
+                  "});",
+                  "",
+                  "// Store a user ID for subsequent tests",
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.length > 0) {",
+                  "    pm.collectionVariables.set('testUserId', jsonData[0].id);",
+                  "    console.log(`[TEST] Stored testUserId: ${jsonData[0].id}`);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Retrieves all users with default pagination settings."
+          }
+        },
+        {
+          "name": "Get All Users - Custom Pagination (Page 2, Limit 5)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Pagination limit is respected', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.length).to.be.at.most(5);",
+                  "});",
+                  "",
+                  "pm.test('Current page header matches request', function () {",
+                  "    const currentPage = pm.response.headers.get('x-pagination-page');",
+                  "    pm.expect(parseInt(currentPage)).to.equal(2);",
+                  "});",
+                  "",
+                  "pm.test('Limit header matches request', function () {",
+                  "    const limit = pm.response.headers.get('x-pagination-limit');",
+                  "    pm.expect(parseInt(limit)).to.equal(5);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?page=2&per_page=5",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "per_page",
+                  "value": "5"
+                }
+              ]
+            },
+            "description": "Tests custom pagination with page 2 and limit of 5 users per page."
+          }
+        },
+        {
+          "name": "Get Single User by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is a single user object', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('object');",
+                  "    pm.expect(jsonData).to.not.be.an('array');",
+                  "});",
+                  "",
+                  "// Comprehensive JSON Schema Validation",
+                  "const singleUserSchema = {",
+                  "    type: 'object',",
+                  "    required: ['id', 'name', 'email', 'gender', 'status'],",
+                  "    properties: {",
+                  "        id: {",
+                  "            type: 'integer',",
+                  "            minimum: 1",
+                  "        },",
+                  "        name: {",
+                  "            type: 'string',",
+                  "            minLength: 1",
+                  "        },",
+                  "        email: {",
+                  "            type: 'string',",
+                  "            pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$'",
+                  "        },",
+                  "        gender: {",
+                  "            type: 'string',",
+                  "            enum: ['male', 'female']",
+                  "        },",
+                  "        status: {",
+                  "            type: 'string',",
+                  "            enum: ['active', 'inactive']",
+                  "        }",
+                  "    },",
+                  "    additionalProperties: false",
+                  "};",
+                  "",
+                  "pm.test('User object has all required properties', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id').that.is.a('number');",
+                  "    pm.expect(jsonData).to.have.property('name').that.is.a('string').and.not.empty;",
+                  "    pm.expect(jsonData).to.have.property('email').that.is.a('string');",
+                  "    pm.expect(jsonData).to.have.property('gender').that.is.oneOf(['male', 'female']);",
+                  "    pm.expect(jsonData).to.have.property('status').that.is.oneOf(['active', 'inactive']);",
+                  "});",
+                  "",
+                  "pm.test('Email format is valid', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$/;",
+                  "    pm.expect(jsonData.email).to.match(emailRegex);",
+                  "});",
+                  "",
+                  "pm.test('User ID matches requested ID', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const requestedId = pm.collectionVariables.get('testUserId');",
+                  "    pm.expect(jsonData.id).to.equal(parseInt(requestedId));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{testUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{testUserId}}"]
+            },
+            "description": "Retrieves a single user by ID with comprehensive schema validation."
+          }
+        },
+        {
+          "name": "Filter Users by Status (Active)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All returned users have active status', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.forEach((user) => {",
+                  "        pm.expect(user.status).to.equal('active');",
+                  "    });",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?status=active",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "active"
+                }
+              ]
+            },
+            "description": "Filters users by active status."
+          }
+        },
+        {
+          "name": "Filter Users by Gender (Female)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('All returned users are female', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    jsonData.forEach((user) => {",
+                  "        pm.expect(user.gender).to.equal('female');",
+                  "    });",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?gender=female",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "gender",
+                  "value": "female"
+                }
+              ]
+            },
+            "description": "Filters users by female gender."
+          }
+        }
+      ],
+      "description": "GET operations for user retrieval and filtering"
+    },
+    {
+      "name": "POST Operations",
+      "item": [
+        {
+          "name": "Create New User - Dynamic Data",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "const randomSuffix = Math.random().toString(36).substring(2, 8);",
+                  "",
+                  "// Generate faker-like random data",
+                  "const firstNames = ['Alexander', 'Isabella', 'Benjamin', 'Charlotte', 'Theodore', 'Olivia'];",
+                  "const lastNames = ['Anderson', 'Thompson', 'Richardson', 'Montgomery', 'Wellington'];",
+                  "",
+                  "const randomFirst = firstNames[Math.floor(Math.random() * firstNames.length)];",
+                  "const randomLast = lastNames[Math.floor(Math.random() * lastNames.length)];",
+                  "",
+                  "pm.collectionVariables.set('newUserName', `${randomFirst} ${randomLast}`);",
+                  "pm.collectionVariables.set('newUserEmail', `${randomFirst.toLowerCase()}.${randomSuffix}.${timestamp}@testautomation.io`);",
+                  "",
+                  "console.log(`[PRE-REQUEST] Creating user: ${pm.collectionVariables.get('newUserName')}`);",
+                  "console.log(`[PRE-REQUEST] Email: ${pm.collectionVariables.get('newUserEmail')}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response contains created user data', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id').that.is.a('number');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('gender');",
+                  "    pm.expect(jsonData).to.have.property('status');",
+                  "});",
+                  "",
+                  "pm.test('Created user data matches request', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedName = pm.collectionVariables.get('newUserName');",
+                  "    const expectedEmail = pm.collectionVariables.get('newUserEmail');",
+                  "    ",
+                  "    pm.expect(jsonData.name).to.equal(expectedName);",
+                  "    pm.expect(jsonData.email).to.equal(expectedEmail);",
+                  "    pm.expect(jsonData.gender).to.equal('male');",
+                  "    pm.expect(jsonData.status).to.equal('active');",
+                  "});",
+                  "",
+                  "pm.test('User ID is a positive integer', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.id).to.be.above(0);",
+                  "});",
+                  "",
+                  "// Store created user ID for subsequent tests",
+                  "const jsonData = pm.response.json();",
+                  "pm.collectionVariables.set('createdUserId', jsonData.id);",
+                  "console.log(`[TEST] Created user ID: ${jsonData.id}`);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"{{newUserName}}\",\n    \"email\": \"{{newUserEmail}}\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Creates a new user with dynamically generated test data."
+          }
+        },
+        {
+          "name": "Create User - Female Inactive",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('femaleUserEmail', `female.user.${timestamp}@testautomation.io`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 201 Created', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('User is created as female and inactive', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.gender).to.equal('female');",
+                  "    pm.expect(jsonData.status).to.equal('inactive');",
+                  "});",
+                  "",
+                  "// Store for cleanup",
+                  "pm.collectionVariables.set('femaleUserId', pm.response.json().id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Jane Test Automation\",\n    \"email\": \"{{femaleUserEmail}}\",\n    \"gender\": \"female\",\n    \"status\": \"inactive\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ],
+      "description": "POST operations for creating new users"
+    },
+    {
+      "name": "PUT Operations",
+      "item": [
+        {
+          "name": "Update User - Full Update",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate new email for update",
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('updatedEmail', `updated.user.${timestamp}@testautomation.io`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('User details are updated correctly', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.equal('Updated Full Name');",
+                  "    pm.expect(jsonData.status).to.equal('inactive');",
+                  "});",
+                  "",
+                  "pm.test('User ID remains unchanged', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const originalId = pm.collectionVariables.get('createdUserId');",
+                  "    pm.expect(jsonData.id).to.equal(parseInt(originalId));",
+                  "});",
+                  "",
+                  "pm.test('Email is updated correctly', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedEmail = pm.collectionVariables.get('updatedEmail');",
+                  "    pm.expect(jsonData.email).to.equal(expectedEmail);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Full Name\",\n    \"email\": \"{{updatedEmail}}\",\n    \"gender\": \"male\",\n    \"status\": \"inactive\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{createdUserId}}"]
+            },
+            "description": "Performs a full update of user details using PUT method."
+          }
+        }
+      ],
+      "description": "PUT operations for full user updates"
+    },
+    {
+      "name": "PATCH Operations",
+      "item": [
+        {
+          "name": "Partial Update - Change Status Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Status is updated to active', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('active');",
+                  "});",
+                  "",
+                  "pm.test('Other fields remain unchanged', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    // Name should still be the updated name from PUT",
+                  "    pm.expect(jsonData.name).to.equal('Updated Full Name');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{createdUserId}}"]
+            },
+            "description": "Partially updates user status using PATCH method."
+          }
+        },
+        {
+          "name": "Partial Update - Change Name Only",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Name is updated correctly', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.name).to.equal('Patched Name Only');",
+                  "});",
+                  "",
+                  "pm.test('Status remains active', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.equal('active');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Patched Name Only\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{createdUserId}}"]
+            }
+          }
+        }
+      ],
+      "description": "PATCH operations for partial user updates"
+    },
+    {
+      "name": "DELETE Operations",
+      "item": [
+        {
+          "name": "Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});",
+                  "",
+                  "console.log(`[TEST] User ${pm.collectionVariables.get('createdUserId')} deleted successfully`);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{createdUserId}}"]
+            },
+            "description": "Deletes the previously created user."
+          }
+        },
+        {
+          "name": "Verify User Deleted (404)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates resource not found', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.equal('Resource not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{createdUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{createdUserId}}"]
+            },
+            "description": "Verifies that the deleted user cannot be retrieved."
+          }
+        },
+        {
+          "name": "Cleanup - Delete Female User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Cleanup test data",
+                  "pm.test('Cleanup: Status code is 204 No Content', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{femaleUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{femaleUserId}}"]
+            }
+          }
+        }
+      ],
+      "description": "DELETE operations for user removal"
+    }
+  ]
+}

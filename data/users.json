@@ -1,0 +1,42 @@
+{
+  "users": [
+    {
+      "name": "Alice Thompson",
+      "email": "alice.thompson.batch1@testmail.com",
+      "gender": "female",
+      "status": "active"
+    },
+    {
+      "name": "Bob Williams",
+      "email": "bob.williams.batch2@testmail.com",
+      "gender": "male",
+      "status": "active"
+    },
+    {
+      "name": "Carol White",
+      "email": "carol.white.batch3@testmail.com",
+      "gender": "female",
+      "status": "inactive"
+    },
+    {
+      "name": "Daniel Lee",
+      "email": "daniel.lee.batch4@testmail.com",
+      "gender": "male",
+      "status": "active"
+    }
+  ],
+  "testScenarios": {
+    "validUser": {
+      "name": "Valid Test User",
+      "email": "valid.user@testmail.com",
+      "gender": "male",
+      "status": "active"
+    },
+    "inactiveUser": {
+      "name": "Inactive Test User",
+      "email": "inactive.user@testmail.com",
+      "gender": "female",
+      "status": "inactive"
+    }
+  }
+}

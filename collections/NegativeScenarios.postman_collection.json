@@ -1,0 +1,1265 @@
+{
+  "info": {
+    "_postman_id": "negative-scenarios-004",
+    "name": "NegativeScenarios",
+    "description": "Negative Testing Collection for API Validation.\n\nThis collection tests:\n- Invalid authentication scenarios\n- Missing required fields\n- Invalid IDs (404 testing)\n- Malformed payloads\n- Security testing (SQL injection attempts)\n- Edge cases and boundary conditions\n\nAuthor: Priyanka Arora\nVersion: 1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "console.log(`[NEGATIVE TEST] Running: ${pm.info.requestName}`);"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Performance check even for error responses",
+          "pm.test('Response time is acceptable', function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(3000);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "invalidToken",
+      "value": "invalid_token_12345"
+    },
+    {
+      "key": "nonExistentUserId",
+      "value": "9999999999"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication Errors",
+      "item": [
+        {
+          "name": "Invalid Auth Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates invalid token', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Invalid token');",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Invalid token correctly rejected');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{invalidToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Tests API response when using an invalid authentication token."
+          }
+        },
+        {
+          "name": "Missing Auth Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates authentication required', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Authentication failed');",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Missing token correctly rejected');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Tests API response when no authentication token is provided."
+          }
+        },
+        {
+          "name": "Empty Auth Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 401 Unauthorized', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Empty token is rejected', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.include('Authentication failed');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ],
+      "description": "Tests for authentication-related error scenarios"
+    },
+    {
+      "name": "Validation Errors",
+      "item": [
+        {
+          "name": "Missing Required Field - Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates name is required', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    const nameError = jsonData.find(e => e.field === 'name');",
+                  "    pm.expect(nameError).to.exist;",
+                  "    pm.expect(nameError.message).to.include(\"can't be blank\");",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Missing name field correctly validated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"test.missing.name@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Tests validation error when name field is missing."
+          }
+        },
+        {
+          "name": "Missing Required Field - Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates email is required', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const emailError = jsonData.find(e => e.field === 'email');",
+                  "    pm.expect(emailError).to.exist;",
+                  "    pm.expect(emailError.message).to.include(\"can't be blank\");",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Missing email field correctly validated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User Without Email\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Missing Required Field - Gender",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates gender is required', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const genderError = jsonData.find(e => e.field === 'gender');",
+                  "    pm.expect(genderError).to.exist;",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Missing gender field correctly validated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User Without Gender\",\n    \"email\": \"test.no.gender@example.com\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Email Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates invalid email format', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const emailError = jsonData.find(e => e.field === 'email');",
+                  "    pm.expect(emailError).to.exist;",
+                  "    pm.expect(emailError.message).to.include('is invalid');",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Invalid email format correctly validated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Invalid Email\",\n    \"email\": \"not-a-valid-email\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Gender Value",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates invalid gender value', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const genderError = jsonData.find(e => e.field === 'gender');",
+                  "    pm.expect(genderError).to.exist;",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Invalid gender value correctly validated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Invalid Gender\",\n    \"email\": \"test.invalid.gender@example.com\",\n    \"gender\": \"unknown\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Invalid Status Value",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Error indicates invalid status value', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const statusError = jsonData.find(e => e.field === 'status');",
+                  "    pm.expect(statusError).to.exist;",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Invalid status value correctly validated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test Invalid Status\",\n    \"email\": \"test.invalid.status@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Empty Request Body",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 422 Unprocessable Entity', function () {",
+                  "    pm.response.to.have.status(422);",
+                  "});",
+                  "",
+                  "pm.test('Multiple validation errors returned', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    pm.expect(jsonData.length).to.be.greaterThan(0);",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Empty body correctly validated');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ],
+      "description": "Tests for field validation errors"
+    },
+    {
+      "name": "Resource Not Found (404)",
+      "item": [
+        {
+          "name": "Get Non-Existent User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates resource not found', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.equal('Resource not found');",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Non-existent user correctly returns 404');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{nonExistentUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{nonExistentUserId}}"]
+            },
+            "description": "Tests 404 response when requesting a non-existent user."
+          }
+        },
+        {
+          "name": "Update Non-Existent User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Cannot update non-existent resource', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.equal('Resource not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Updated Name\",\n    \"email\": \"updated@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{nonExistentUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{nonExistentUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Non-Existent User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns 404 Not Found', function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});",
+                  "",
+                  "pm.test('Cannot delete non-existent resource', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.message).to.equal('Resource not found');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{nonExistentUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{nonExistentUserId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get User with Invalid ID Format",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns error status code', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 404, 422]);",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Invalid ID format handled');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/invalid-id-abc",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "invalid-id-abc"]
+            }
+          }
+        }
+      ],
+      "description": "Tests for 404 Not Found scenarios"
+    },
+    {
+      "name": "Malformed Payload",
+      "item": [
+        {
+          "name": "Malformed JSON - Missing Closing Brace",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns error status code (401 or 500)', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 500, 422]);",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Malformed JSON correctly rejected');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\""
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Tests API response when JSON is malformed (missing closing brace)."
+          }
+        },
+        {
+          "name": "Invalid JSON - Trailing Comma",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns error status code', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 500, 422]);",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Invalid JSON with trailing comma rejected');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test User\",\n    \"email\": \"test@example.com\",\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Plain Text Instead of JSON",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Returns error when sending plain text', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([401, 415, 422, 500]);",
+                  "});",
+                  "",
+                  "console.log('[NEGATIVE] Plain text payload rejected');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "This is not JSON content"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ],
+      "description": "Tests for malformed request payloads"
+    },
+    {
+      "name": "Security Testing",
+      "item": [
+        {
+          "name": "SQL Injection Attempt - Name Field",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API handles SQL injection safely', function () {",
+                  "    // Should either reject or sanitize the input",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 422, 400]);",
+                  "});",
+                  "",
+                  "pm.test('No SQL error in response', function () {",
+                  "    const responseText = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseText).to.not.include('sql');",
+                  "    pm.expect(responseText).to.not.include('syntax error');",
+                  "    pm.expect(responseText).to.not.include('mysql');",
+                  "    pm.expect(responseText).to.not.include('postgresql');",
+                  "});",
+                  "",
+                  "console.log('[SECURITY] SQL injection attempt handled safely');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Robert'); DROP TABLE users;--\",\n    \"email\": \"sqli.test@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Tests API security against SQL injection attacks."
+          }
+        },
+        {
+          "name": "SQL Injection Attempt - Query Parameter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API handles SQL injection in params safely', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]);",
+                  "});",
+                  "",
+                  "pm.test('No database error exposed', function () {",
+                  "    const responseText = pm.response.text().toLowerCase();",
+                  "    pm.expect(responseText).to.not.include('syntax error');",
+                  "    pm.expect(responseText).to.not.include('database');",
+                  "});",
+                  "",
+                  "console.log('[SECURITY] SQL injection in params handled safely');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users?name=1' OR '1'='1",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "1' OR '1'='1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "XSS Attempt - Script Tag in Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API handles XSS attempt safely', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 422, 400]);",
+                  "});",
+                  "",
+                  "// If created, check the response is sanitized or escaped",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Script tag is handled properly', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        // Script should be escaped or stored as plain text",
+                  "        pm.expect(jsonData.name).to.be.a('string');",
+                  "    });",
+                  "}",
+                  "",
+                  "console.log('[SECURITY] XSS attempt handled safely');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"<script>alert('XSS')</script>\",\n    \"email\": \"xss.test@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ],
+      "description": "Security testing for injection vulnerabilities"
+    },
+    {
+      "name": "Edge Cases",
+      "item": [
+        {
+          "name": "Very Long Name (Boundary Test)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate a very long name (1000 characters)",
+                  "const longName = 'A'.repeat(1000);",
+                  "pm.collectionVariables.set('longName', longName);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API handles very long input', function () {",
+                  "    // Should either accept or reject with validation error",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 422, 400, 413]);",
+                  "});",
+                  "",
+                  "console.log('[EDGE CASE] Very long name handled');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"{{longName}}\",\n    \"email\": \"long.name.test@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Special Characters in Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API handles special characters', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 422, 400]);",
+                  "});",
+                  "",
+                  "console.log('[EDGE CASE] Special characters handled');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Test!@#$%^&*()_+-=[]{}|;':,./<>?\",\n    \"email\": \"special.chars@example.com\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Unicode Characters in Name",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API handles unicode characters', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 422, 400]);",
+                  "});",
+                  "",
+                  "if (pm.response.code === 201) {",
+                  "    pm.test('Unicode is preserved', function () {",
+                  "        const jsonData = pm.response.json();",
+                  "        pm.expect(jsonData.name).to.include('日本語');",
+                  "    });",
+                  "}",
+                  "",
+                  "console.log('[EDGE CASE] Unicode characters handled');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"日本語テスト User 中文 العربية\",\n    \"email\": \"unicode.test@example.com\",\n    \"gender\": \"female\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Null Values in Request",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('API handles null values', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([422, 400]);",
+                  "});",
+                  "",
+                  "console.log('[EDGE CASE] Null values handled');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{authToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": null,\n    \"email\": null,\n    \"gender\": null,\n    \"status\": null\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        }
+      ],
+      "description": "Edge cases and boundary testing"
+    }
+  ]
+}

@@ -1,0 +1,545 @@
+{
+  "info": {
+    "_postman_id": "gorest-posts-comments-002",
+    "name": "GoRest_PostsAndComments",
+    "description": "API test collection for GoRest Posts and Comments endpoints.\n\nThis collection demonstrates:\n- Request chaining and workflow testing\n- Dynamic ID passing between requests\n- Full CRUD workflow for posts and comments\n- Data cleanup and teardown\n\nWorkflow: Create User -> Create Post -> Add Comment -> Update Post -> Delete Comment -> Cleanup\n\nAuthor: Priyanka Arora\nVersion: 1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection-level pre-request script",
+          "console.log('='.repeat(50));",
+          "console.log(`[WORKFLOW] Executing: ${pm.info.requestName}`);",
+          "console.log('='.repeat(50));"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Collection-level test script - Performance monitoring",
+          "const maxResponseTime = parseInt(pm.environment.get('maxResponseTime')) || 2000;",
+          "",
+          "pm.test(`Performance: Response time < ${maxResponseTime}ms`, function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(maxResponseTime);",
+          "});",
+          "",
+          "console.log(`[RESPONSE] Status: ${pm.response.code}, Time: ${pm.response.responseTime}ms`);"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "workflowUserId",
+      "value": ""
+    },
+    {
+      "key": "workflowPostId",
+      "value": ""
+    },
+    {
+      "key": "workflowCommentId",
+      "value": ""
+    },
+    {
+      "key": "workflowUserEmail",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Workflow - Posts and Comments",
+      "item": [
+        {
+          "name": "Step 1: Create User for Workflow",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Generate unique user data for this workflow",
+                  "const timestamp = Date.now();",
+                  "const workflowEmail = `workflow.user.${timestamp}@automation.test`;",
+                  "pm.collectionVariables.set('workflowUserEmail', workflowEmail);",
+                  "",
+                  "console.log(`[STEP 1] Creating workflow user with email: ${workflowEmail}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User created successfully (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('User ID is returned', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData.id).to.be.a('number');",
+                  "});",
+                  "",
+                  "// Store user ID for subsequent requests in workflow",
+                  "const userData = pm.response.json();",
+                  "pm.environment.set('workflowUserId', userData.id);",
+                  "pm.collectionVariables.set('workflowUserId', userData.id);",
+                  "",
+                  "console.log(`[STEP 1 COMPLETE] Created User ID: ${userData.id}`);",
+                  "console.log('[CHAINING] User ID stored for Step 2');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"Workflow Test User\",\n    \"email\": \"{{workflowUserEmail}}\",\n    \"gender\": \"male\",\n    \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            },
+            "description": "Step 1: Creates a user for the posts and comments workflow."
+          }
+        },
+        {
+          "name": "Step 2: Create Post for User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Verify user ID is available from Step 1",
+                  "const userId = pm.collectionVariables.get('workflowUserId');",
+                  "if (!userId) {",
+                  "    throw new Error('workflowUserId not found. Run Step 1 first.');",
+                  "}",
+                  "console.log(`[STEP 2] Creating post for User ID: ${userId}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Post created successfully (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Post contains required fields', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('user_id');",
+                  "    pm.expect(jsonData).to.have.property('title');",
+                  "    pm.expect(jsonData).to.have.property('body');",
+                  "});",
+                  "",
+                  "pm.test('Post is linked to correct user', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedUserId = parseInt(pm.collectionVariables.get('workflowUserId'));",
+                  "    pm.expect(jsonData.user_id).to.equal(expectedUserId);",
+                  "});",
+                  "",
+                  "// Store post ID for next steps",
+                  "const postData = pm.response.json();",
+                  "pm.environment.set('workflowPostId', postData.id);",
+                  "pm.collectionVariables.set('workflowPostId', postData.id);",
+                  "",
+                  "console.log(`[STEP 2 COMPLETE] Created Post ID: ${postData.id}`);",
+                  "console.log('[CHAINING] Post ID stored for Step 3');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": {{workflowUserId}},\n    \"title\": \"Automated Test Post - API Testing Best Practices\",\n    \"body\": \"This is an automated test post created during API workflow testing. It demonstrates how to chain requests and pass data between them using environment variables. The post will be used to test comment functionality.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{workflowUserId}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{workflowUserId}}", "posts"]
+            },
+            "description": "Step 2: Creates a post for the user created in Step 1."
+          }
+        },
+        {
+          "name": "Step 3: Add Comment to Post",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Verify post ID is available from Step 2",
+                  "const postId = pm.collectionVariables.get('workflowPostId');",
+                  "if (!postId) {",
+                  "    throw new Error('workflowPostId not found. Run Step 2 first.');",
+                  "}",
+                  "",
+                  "// Generate unique comment email",
+                  "const timestamp = Date.now();",
+                  "pm.collectionVariables.set('commentEmail', `commenter.${timestamp}@automation.test`);",
+                  "",
+                  "console.log(`[STEP 3] Adding comment to Post ID: ${postId}`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Comment created successfully (201)', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Comment contains required fields', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.have.property('id');",
+                  "    pm.expect(jsonData).to.have.property('post_id');",
+                  "    pm.expect(jsonData).to.have.property('name');",
+                  "    pm.expect(jsonData).to.have.property('email');",
+                  "    pm.expect(jsonData).to.have.property('body');",
+                  "});",
+                  "",
+                  "pm.test('Comment is linked to correct post', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedPostId = parseInt(pm.collectionVariables.get('workflowPostId'));",
+                  "    pm.expect(jsonData.post_id).to.equal(expectedPostId);",
+                  "});",
+                  "",
+                  "// Store comment ID for deletion step",
+                  "const commentData = pm.response.json();",
+                  "pm.environment.set('workflowCommentId', commentData.id);",
+                  "pm.collectionVariables.set('workflowCommentId', commentData.id);",
+                  "",
+                  "console.log(`[STEP 3 COMPLETE] Created Comment ID: ${commentData.id}`);",
+                  "console.log('[CHAINING] Comment ID stored for Step 5');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"post_id\": {{workflowPostId}},\n    \"name\": \"API Test Commenter\",\n    \"email\": \"{{commentEmail}}\",\n    \"body\": \"This is an automated test comment. It was created as part of the API workflow test to demonstrate request chaining and data validation.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{workflowPostId}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{workflowPostId}}", "comments"]
+            },
+            "description": "Step 3: Adds a comment to the post created in Step 2."
+          }
+        },
+        {
+          "name": "Step 4: Update Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Post updated successfully (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Post title is updated', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.title).to.include('UPDATED');",
+                  "});",
+                  "",
+                  "pm.test('Post ID remains unchanged', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const expectedPostId = parseInt(pm.collectionVariables.get('workflowPostId'));",
+                  "    pm.expect(jsonData.id).to.equal(expectedPostId);",
+                  "});",
+                  "",
+                  "console.log('[STEP 4 COMPLETE] Post updated successfully');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"user_id\": {{workflowUserId}},\n    \"title\": \"[UPDATED] Automated Test Post - API Testing Best Practices\",\n    \"body\": \"This post has been updated during the workflow test. The update demonstrates the PUT operation functionality and validates that partial updates work correctly.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{workflowPostId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{workflowPostId}}"]
+            },
+            "description": "Step 4: Updates the post content."
+          }
+        },
+        {
+          "name": "Step 5: Get Post Comments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Comments retrieved successfully (200)', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('At least one comment exists', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.length).to.be.at.least(1);",
+                  "});",
+                  "",
+                  "pm.test('Our comment is in the list', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    const ourCommentId = parseInt(pm.collectionVariables.get('workflowCommentId'));",
+                  "    const found = jsonData.some(comment => comment.id === ourCommentId);",
+                  "    pm.expect(found).to.be.true;",
+                  "});",
+                  "",
+                  "console.log('[STEP 5 COMPLETE] Comments verified on post');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{workflowPostId}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{workflowPostId}}", "comments"]
+            },
+            "description": "Step 5: Retrieves all comments for the post to verify our comment exists."
+          }
+        },
+        {
+          "name": "Step 6: Delete Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Comment deleted successfully (204)', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});",
+                  "",
+                  "console.log('[STEP 6 COMPLETE] Comment deleted');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments/{{workflowCommentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments", "{{workflowCommentId}}"]
+            },
+            "description": "Step 6: Deletes the comment created in Step 3."
+          }
+        },
+        {
+          "name": "Step 7: Delete Post",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Post deleted successfully (204)', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "console.log('[STEP 7 COMPLETE] Post deleted');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts/{{workflowPostId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts", "{{workflowPostId}}"]
+            },
+            "description": "Step 7: Deletes the post created in Step 2."
+          }
+        },
+        {
+          "name": "Step 8: Cleanup - Delete User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('User deleted successfully (204)', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "// Clear all workflow variables",
+                  "pm.environment.unset('workflowUserId');",
+                  "pm.environment.unset('workflowPostId');",
+                  "pm.environment.unset('workflowCommentId');",
+                  "",
+                  "console.log('[STEP 8 COMPLETE] User deleted - Workflow cleanup finished');",
+                  "console.log('='.repeat(50));",
+                  "console.log('WORKFLOW COMPLETED SUCCESSFULLY');",
+                  "console.log('='.repeat(50));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{workflowUserId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{workflowUserId}}"]
+            },
+            "description": "Step 8: Final cleanup - deletes the user created in Step 1."
+          }
+        }
+      ],
+      "description": "Complete workflow demonstrating request chaining:\n1. Create User\n2. Create Post for User\n3. Add Comment to Post\n4. Update Post\n5. Verify Comments\n6. Delete Comment\n7. Delete Post\n8. Cleanup User"
+    },
+    {
+      "name": "Posts CRUD",
+      "item": [
+        {
+          "name": "Get All Posts",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of posts', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "    if (jsonData.length > 0) {",
+                  "        pm.expect(jsonData[0]).to.have.property('id');",
+                  "        pm.expect(jsonData[0]).to.have.property('user_id');",
+                  "        pm.expect(jsonData[0]).to.have.property('title');",
+                  "        pm.expect(jsonData[0]).to.have.property('body');",
+                  "    }",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/posts",
+              "host": ["{{baseUrl}}"],
+              "path": ["posts"]
+            }
+          }
+        },
+        {
+          "name": "Get All Comments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array of comments', function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/comments",
+              "host": ["{{baseUrl}}"],
+              "path": ["comments"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
