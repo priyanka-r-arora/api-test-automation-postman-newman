@@ -28,7 +28,7 @@ fi
 # Copy DEV environment to LOCAL and replace values
 cat environments/DEV.postman_environment.json | \
   sed 's/"name": "DEV"/"name": "LOCAL"/' | \
-  sed 's/"value": "YOUR_DEV_AUTH_TOKEN_HERE"/"value": "'"$GOREST_AUTH_TOKEN"'"/' | \
+  sed 's/"value": "YOUR_AUTH_TOKEN_HERE"/"value": "'"$GOREST_AUTH_TOKEN"'"/' | \
   sed 's/"value": "YOUR_REQRES_API_KEY_HERE"/"value": "'"$REQRES_API_KEY"'"/' \
   > environments/LOCAL.postman_environment.json
 
