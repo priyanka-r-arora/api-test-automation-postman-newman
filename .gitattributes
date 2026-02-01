@@ -1,0 +1,21 @@
+# Documentation
+*.md linguist-documentation
+
+# Postman collections - mark as data but detectable
+*.postman_collection.json linguist-detectable=true
+*.postman_environment.json linguist-detectable=false
+
+# Test data
+data/*.csv linguist-generated=false
+data/*.json linguist-generated=false
+
+# Scripts are part of the project
+scripts/*.sh linguist-detectable=true
+
+# Package files
+package.json linguist-detectable=true
+package-lock.json linguist-generated=true
+
+# Config files
+*.yml linguist-detectable=true
+*.yaml linguist-detectable=true
