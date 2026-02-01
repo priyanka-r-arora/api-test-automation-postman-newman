@@ -21,6 +21,12 @@
       "script": {
         "type": "text/javascript",
         "exec": [
+          "// Add User-Agent to bypass Cloudflare bot detection",
+          "pm.request.headers.add({",
+          "    key: 'User-Agent',",
+          "    value: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'",
+          "});",
+          "",
           "// Generate dynamic test data using faker-like logic",
           "const generateRandomString = (length) => {",
           "    const chars = 'abcdefghijklmnopqrstuvwxyz';",
@@ -113,6 +119,15 @@
               "listen": "test",
               "script": {
                 "exec": [
+                  "// Check if we got HTML instead of JSON (Cloudflare block)",
+                  "if (pm.response.headers.get('Content-Type')?.includes('text/html')) {",
+                  "    console.error('Received HTML instead of JSON - Cloudflare bot detection');",
+                  "    pm.test('API is accessible (not blocked by Cloudflare)', function() {",
+                  "        pm.expect.fail('API returned HTML instead of JSON. Check User-Agent header.');",
+                  "    });",
+                  "    return;",
+                  "}",
+                  "",
                   "pm.test('Status code is 200 OK', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
