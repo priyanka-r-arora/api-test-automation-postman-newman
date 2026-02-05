@@ -1,4 +1,3 @@
-![Status](https://img.shields.io/badge/status-in%20progress-yellow)
 # API Test Automation Framework
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
@@ -6,14 +5,13 @@
 [![Newman](https://img.shields.io/badge/Newman-CLI-blue.svg)](https://www.npmjs.com/package/newman)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A comprehensive API test automation framework built with Postman and Newman, with full test coverage, CI/CD integration, data-driven testing and detailed reporting.
+A comprehensive API test automation framework built with Postman and Newman, with full test coverage, data-driven testing and detailed reporting.
 
 ### AI-Assisted Development
 
 This project leverages AI tools to enhance documentation quality and optimize framework configuration. The comprehensive README, setup guides and troubleshooting documentation were created with AI assistance to ensure clarity, consistency and professional standards.
 
 Core test strategy, architecture decisions and quality standards remain human-driven.
-
 
 ## Table of Contents
 
@@ -25,9 +23,9 @@ Core test strategy, architecture decisions and quality standards remain human-dr
 - [Installation](#-installation)
 - [Local Development Setup](#-local-development-setup)
 - [Test Execution](#-test-execution)
-- [CI/CD Pipeline](#-cicd-pipeline)
 - [Test Coverage](#-test-coverage)
 - [Reports](#-reports)
+- [CI/CD and Testing Strategy](#-cicd-and-testing-strategy)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Author](#-author)
@@ -35,9 +33,9 @@ Core test strategy, architecture decisions and quality standards remain human-dr
 ## Overview
 
 - **4 Comprehensive Test Collections** covering CRUD operations, workflows, E2E journeys and negative scenarios
-- **Multi-Environment Support** (DEV, QA, PROD)
+- **Multi-Environment Support** (DEV, QA, PROD) - Run the same collections against different environments with a simple setup command
+- **Environment Switching** - Easily switch between environments without modifying collection files
 - **Data-Driven Testing** with CSV and JSON data files
-- **Automated CI/CD Pipeline** with GitHub Actions
 - **Detailed HTML Reports** using newman-reporter-htmlextra
 - **Security Testing** including SQL injection and XSS prevention tests
 
@@ -57,7 +55,6 @@ Core test strategy, architecture decisions and quality standards remain human-dr
 | **Newman** | Command-line collection runner for Postman |
 | **newman-reporter-htmlextra** | Enhanced HTML report generation |
 | **Node.js 18+** | JavaScript runtime |
-| **GitHub Actions** | CI/CD automation |
 | **Bash** | Shell scripting for test execution |
 
 ## Features
@@ -76,15 +73,11 @@ Core test strategy, architecture decisions and quality standards remain human-dr
 - **Dynamic Variables** - Faker-like random data generation
 - **Detailed Logging** - Comprehensive console output
 - **HTML Reports** - Beautiful, detailed test reports
-- **CI/CD Ready** - GitHub Actions workflow included
 
 ## Project Structure
 
 ```
 api-test-automation-postman-newman/
-├── .github/
-│   └── workflows/
-│       └── api-tests.yml          # GitHub Actions CI/CD pipeline
 ├── collections/
 │   ├── GoRest_UserManagement.postman_collection.json
 │   ├── GoRest_PostsAndComments.postman_collection.json
@@ -101,7 +94,9 @@ api-test-automation-postman-newman/
 ├── reports/                       # Generated test reports (gitignored)
 ├── scripts/
 │   └── inject-secrets.sh          # Local environment setup script
-├── .env                           # Local secrets (gitignored)
+├── .env                           # Prod secrets (gitignored)
+├── .env.dev                       # Dev secrets (gitignored)
+├── .env.qa.                       # QA secrets (gitignored)
 ├── .env.example                   # Environment template
 ├── .gitignore
 ├── package.json
@@ -133,9 +128,9 @@ cd api-test-automation-postman-newman
 npm install
 ```
 
-#### Local Development Setup
+## Local Development Setup
 
-The framework uses an industry-standard pattern with separate commands for local development (`local:*`) and CI/CD (`test:*`). 
+The framework provides environment-specific setup for DEV, QA, and PROD environments. 
 
 ### One-Time Setup
 
@@ -145,13 +140,17 @@ The framework uses an industry-standard pattern with separate commands for local
 cp .env.example .env
 ```
 
-#### 2. Add your actual tokens to `.env`
+#### 2. Add your actual tokens
 
-Edit `.env` and add your credentials for DEV env:
+Create environment-specific files:
+- `.env.dev` - Development environment credentials
+- `.env.qa` - QA environment credentials  
+- `.env` - Production environment credentials
 
+Example `.env.dev`:
 ```bash
-GOREST_AUTH_TOKEN=your_actual_gorest_token_here
-REQRES_API_KEY=your_actual_reqres_key_here
+GOREST_AUTH_TOKEN=your_dev_gorest_token
+REQRES_API_KEY=your_dev_reqres_key
 ```
 
 **Important:**
@@ -160,109 +159,86 @@ REQRES_API_KEY=your_actual_reqres_key_here
 - Don't use quotes around values
 - Never commit `.env` file to git
 
-#### 3. Run local setup
+#### 3. Run environment setup
 
-This creates a `LOCAL.postman_environment.json` file with your credentials:
+Choose your environment:
 
 ```bash
-npm run local:setup
+npm run setup:dev   # Setup DEV environment
+npm run setup:qa    # Setup QA environment
+npm run setup       # Setup PROD environment
 ```
+
+This creates a `LOCAL.postman_environment.json` file with your environment-specific credentials.
 
 ### Running Tests Locally
 
-Once setup is complete, run tests using `local:*` commands:
+Once setup is complete, run tests:
 
 ```bash
 # Run smoke tests
-npm run local:smoke
+npm run test:smoke
 
 # Run all test collections
-npm run local:all
+npm run test:all
 
 # Run specific collections
-npm run local:users       # User management tests
-npm run local:posts       # Posts & comments tests
-npm run local:e2e         # E2E journey tests
-npm run local:negative    # Negative scenarios
-npm run local:data-driven # Data-driven tests with CSV
+npm run test:users       # User management tests
+npm run test:posts       # Posts & comments tests
+npm run test:e2e         # E2E journey tests
+npm run test:negative    # Negative scenarios
+npm run test:data-driven # Data-driven tests with CSV
 ```
 
 ### How It Works
 
-1. **local:setup** - Runs `inject-secrets.sh` script that:
-   - Loads credentials from `.env` file
-   - Copies `DEV.postman_environment.json` to `LOCAL.postman_environment.json`
+1. **setup:*** commands - Run `inject-secrets.sh` script that:
+   - Loads credentials from environment-specific `.env` file
+   - Copies corresponding `[ENV].postman_environment.json` to `LOCAL.postman_environment.json`
    - Injects actual credentials into the LOCAL environment file
 
-2. **local:*** commands - Wraps test commands with `dotenv-cli`:
+2. **test:*** commands - Execute tests with `dotenv-cli`:
    - Automatically loads environment variables from `.env`
    - Passes them to Newman for test execution
    - Uses `LOCAL.postman_environment.json` as the environment
 
-3. **test:*** commands - Direct Newman execution (used by CI/CD):
-   - Uses environment variable `TEST_ENV` to select environment
-   - Defaults to `LOCAL` for local runs
-   - CI/CD sets `TEST_ENV` to DEV/QA/PROD
-
 ### Troubleshooting Local Setup
 
 **"GOREST_AUTH_TOKEN is not set"**
-- Ensure `.env` file exists in project root
-- Check file has correct values: `cat .env`
-- Run `npm run local:setup` again
+- Ensure environment-specific `.env` file exists (`.env.dev`, `.env.qa`, or `.env`)
+- Check file has correct values: `cat .env.dev`
+- Run setup command again: `npm run setup:dev`
 
 **"No such file: environments/LOCAL.postman_environment.json"**
-- Run `npm run local:setup` first
+- Run environment setup first: `npm run setup:dev` (or setup:qa/setup)
 - Check if `inject-secrets.sh` is executable: `chmod +x scripts/inject-secrets.sh`
 
 **Tests fail with 401 Unauthorized**
 - Verify token is valid (not expired)
-- Re-run `npm run local:setup` after updating `.env`
+- Re-run setup after updating environment file
 
-### 3. Configure API Token (For CI/CD)
-
-For GitHub Actions, configure secrets in your repository settings:
-
-1. Go to repository Settings → Secrets and variables → Actions
-2. Add repository secrets or use GitHub Environments (DEV/QA/PROD)
-
-| Secret | Description |
-|--------|-------------|
-| `GOREST_AUTH_TOKEN` | Your GoRest API authentication token |
-| `REQRES_API_KEY` | Your ReqRes API key (optional) |
-
-### 4. Make Scripts Executable (macOS/Linux)
+### 3. Make Scripts Executable (macOS/Linux)
 
 ```bash
 chmod +x scripts/*.sh
 ```
 
-### Test Execution
+## Test Execution
 
-#### Local Development Commands
-
-Use `local:*` commands for running tests on your local machine:
+### Setup Commands
 
 | Command | Description |
 |---------|-------------|
-| `npm run local:setup` | **One-time setup** - Create LOCAL environment with credentials |
-| `npm run local:all` | Run all test collections |
-| `npm run local:smoke` | Run smoke tests only |
-| `npm run local:users` | Run User Management tests |
-| `npm run local:posts` | Run Posts & Comments tests |
-| `npm run local:e2e` | Run E2E Journey tests |
-| `npm run local:negative` | Run Negative Scenario tests |
-| `npm run local:data-driven` | Run data-driven tests with CSV |
+| `npm run setup:dev` | Setup DEV environment |
+| `npm run setup:qa` | Setup QA environment |
+| `npm run setup` | Setup PROD environment |
 
-### CI/CD Commands
-
-These commands are used by GitHub Actions (can also be used locally with environment variables):
+### Test Commands
 
 | Command | Description |
 |---------|-------------|
 | `npm run test:all` | Run all test collections |
 | `npm run test:smoke` | Run smoke tests only |
-| `npm run test:regression` | Run full regression suite |
 | `npm run test:users` | Run User Management tests |
 | `npm run test:posts` | Run Posts & Comments tests |
 | `npm run test:e2e` | Run E2E Journey tests |
@@ -293,36 +269,6 @@ npx newman run collections/GoRest_UserManagement.postman_collection.json \
     -d data/test-data.csv \
     -r htmlextra
 ```
-
-## CI/CD Pipeline
-
-The GitHub Actions workflow (`.github/workflows/api-tests.yml`) is fully integrated with the npm scripts.
-
-### Workflow Features
-
-- **Environment Selection**: Manual workflow dispatch allows choosing DEV/QA/PROD
-- **Automated Triggers**: Push, Pull Request and scheduled runs
-- **Secret Management**: Uses GitHub Environments for secure credential storage
-- **HTML Reports**: Generated and available as artifacts
-
-### Triggers
-- **Push** to `main` or `feature/**` branches
-- **Pull Requests** to `main`
-- **Scheduled** runs daily at 2 AM UTC
-- **Manual** workflow dispatch with environment selection
-
-
-### GitHub Secrets Configuration
-
-Configure secrets using GitHub Environments for better organization:
-
-1. Go to: **Settings** → **Environments** → Create environments: `DEV`, `QA`, `PROD`
-2. Add environment secrets to each:
-
-| Secret | Description |
-|--------|-------------|
-| `GOREST_AUTH_TOKEN` | Your GoRest API authentication token |
-| `REQRES_API_KEY` | Your ReqRes API key (optional) |
 
 ## Test Coverage
 
@@ -381,19 +327,19 @@ reports/
 
 ### Switching Environments
 
-**Local Development:**
+**Setup different environments:**
 ```bash
-# Always uses LOCAL environment (auto-generated from .env)
-npm run local:smoke
-npm run local:all
-```
+# Setup DEV environment
+npm run setup:dev
+npm run test:smoke
 
-**CI/CD:**
-```bash
-# Set TEST_ENV to choose environment
-TEST_ENV=DEV npm run test:smoke
-TEST_ENV=QA npm run test:all
-TEST_ENV=PROD npm run test:regression
+# Switch to QA environment
+npm run setup:qa
+npm run test:all
+
+# Switch to PROD environment
+npm run setup
+npm run test:smoke
 ```
 
 **Newman CLI:**
@@ -402,6 +348,39 @@ TEST_ENV=PROD npm run test:regression
 npx newman run collections/GoRest_UserManagement.postman_collection.json \
     -e environments/PROD.postman_environment.json
 ```
+
+## CI/CD and Testing Strategy
+
+### Why This Framework Runs Locally Only
+
+This project is intentionally designed for **local execution only** and does not include CI/CD pipeline integration. Here's why:
+
+#### Cloudflare Bot Mitigation Challenge
+
+The public APIs used in this framework (GoRest, JSONPlaceholder, ReqRes) are protected by **Cloudflare's bot mitigation**, which challenges traffic from automated or non-interactive environments such as CI/CD pipelines (GitHub Actions, Jenkins, etc.).
+
+These challenges rely on JavaScript execution and cookies, which **cannot be completed by Newman** when running in headless CI/CD environments. This results in:
+- Tests failing with Cloudflare challenge pages instead of actual API responses
+- Unpredictable test execution and false failures
+- No viable workaround without compromising security or API provider policies
+
+### Recommended Approach for CI/CD Pipelines
+
+For production-grade CI/CD integration with API testing, the industry best practice is to **mock external APIs** rather than calling live public endpoints directly.
+
+#### Recommended Tools:
+- **Postman Mock Servers** - [Learn more](https://learning.postman.com/docs/designing-and-developing-your-api/mocking-data/setting-up-mock/)
+- **WireMock** - Open-source API mocking
+
+### Future Roadmap
+
+For now, this framework demonstrates core API testing concepts, collection design and local automation workflows.
+
+In the next iteration of this project, I plan to:
+- Explore **Postman Mock Servers** for CI/CD-friendly testing
+- Implement contract testing with recorded API responses
+- Add GitHub Actions workflow using mocked endpoints
+- Document mock server setup and configuration
 
 ## Contributing
 
