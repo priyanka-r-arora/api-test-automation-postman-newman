@@ -1,4 +1,3 @@
-![Status](https://img.shields.io/badge/status-in%20progress-yellow)
 # API Test Automation Framework
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
