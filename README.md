@@ -8,6 +8,11 @@
 
 A comprehensive API test automation framework built with Postman and Newman, with full test coverage, data-driven testing and detailed reporting.
 
+### AI-Assisted Development
+
+This project leverages AI tools to enhance documentation quality and optimize framework configuration. The comprehensive README, setup guides and troubleshooting documentation were created with AI assistance to ensure clarity, consistency and professional standards.
+
+Core test strategy, architecture decisions and quality standards remain human-driven.
 
 ## Table of Contents
 
@@ -21,6 +26,7 @@ A comprehensive API test automation framework built with Postman and Newman, wit
 - [Test Execution](#-test-execution)
 - [Test Coverage](#-test-coverage)
 - [Reports](#-reports)
+- [CI/CD and Testing Strategy](#-cicd-and-testing-strategy)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Author](#-author)
@@ -28,7 +34,8 @@ A comprehensive API test automation framework built with Postman and Newman, wit
 ## Overview
 
 - **4 Comprehensive Test Collections** covering CRUD operations, workflows, E2E journeys and negative scenarios
-- **Multi-Environment Support** (DEV, QA, PROD)
+- **Multi-Environment Support** (DEV, QA, PROD) - Run the same collections against different environments with a simple setup command
+- **Environment Switching** - Easily switch between environments without modifying collection files
 - **Data-Driven Testing** with CSV and JSON data files
 - **Detailed HTML Reports** using newman-reporter-htmlextra
 - **Security Testing** including SQL injection and XSS prevention tests
@@ -342,6 +349,39 @@ npm run test:smoke
 npx newman run collections/GoRest_UserManagement.postman_collection.json \
     -e environments/PROD.postman_environment.json
 ```
+
+## CI/CD and Testing Strategy
+
+### Why This Framework Runs Locally Only
+
+This project is intentionally designed for **local execution only** and does not include CI/CD pipeline integration. Here's why:
+
+#### Cloudflare Bot Mitigation Challenge
+
+The public APIs used in this framework (GoRest, JSONPlaceholder, ReqRes) are protected by **Cloudflare's bot mitigation**, which challenges traffic from automated or non-interactive environments such as CI/CD pipelines (GitHub Actions, Jenkins, etc.).
+
+These challenges rely on JavaScript execution and cookies, which **cannot be completed by Newman** when running in headless CI/CD environments. This results in:
+- Tests failing with Cloudflare challenge pages instead of actual API responses
+- Unpredictable test execution and false failures
+- No viable workaround without compromising security or API provider policies
+
+### Recommended Approach for CI/CD Pipelines
+
+For production-grade CI/CD integration with API testing, the industry best practice is to **mock external APIs** rather than calling live public endpoints directly.
+
+#### Recommended Tools:
+- **Postman Mock Servers** - [Learn more](https://learning.postman.com/docs/designing-and-developing-your-api/mocking-data/setting-up-mock/)
+- **WireMock** - Open-source API mocking
+
+### Future Roadmap
+
+For now, this framework demonstrates core API testing concepts, collection design and local automation workflows.
+
+In the next iteration of this project, I plan to:
+- Explore **Postman Mock Servers** for CI/CD-friendly testing
+- Implement contract testing with recorded API responses
+- Add GitHub Actions workflow using mocked endpoints
+- Document mock server setup and configuration
 
 ## Contributing
 
