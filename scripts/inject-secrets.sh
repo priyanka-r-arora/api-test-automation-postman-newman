@@ -1,35 +1,46 @@
 #!/bin/bash
-
-# Copies DEV.postman_environment.json to LOCAL and replaces 
-# placeholder values with .env values
+# Creates LOCAL.postman_environment.json from specified environment
+# Usage: ./inject-secrets.sh [DEV|QA|PROD]
 
 set -e
 
-# Load environment variables from .env file
-if [ -f .env ]; then
-  export $(cat .env | grep -v '^#' | xargs)
+ENV="${1:-DEV}"
+
+if [[ ! "$ENV" =~ ^(DEV|QA|PROD)$ ]]; then
+  echo "Error: Invalid environment '$ENV'. Must be DEV, QA, or PROD"
+  exit 1
+fi
+
+if [ "$ENV" = "PROD" ]; then
+  ENV_FILE=".env"
 else
-  echo "Error: .env file not found!"
+  ENV_FILE=".env.$(echo "$ENV" | tr '[:upper:]' '[:lower:]')"
+fi
+
+if [ -f "$ENV_FILE" ]; then
+  echo "Loading credentials from ${ENV_FILE}..."
+  export $(cat "$ENV_FILE" | grep -v '^#' | xargs)
+else
+  echo "Error: ${ENV_FILE} not found!"
   exit 1
 fi
 
-# Check if required variables are set
 if [ -z "$GOREST_AUTH_TOKEN" ] || [ -z "$REQRES_API_KEY" ]; then
-  echo "Error: GOREST_AUTH_TOKEN and REQRES_API_KEY must be set in .env file"
+  echo "Error: GOREST_AUTH_TOKEN and REQRES_API_KEY must be set in ${ENV_FILE}"
   exit 1
 fi
 
-# Check if DEV environment file exists
-if [ ! -f environments/DEV.postman_environment.json ]; then
-  echo "Error: environments/DEV.postman_environment.json not found!"
+if [ ! -f "environments/${ENV}.postman_environment.json" ]; then
+  echo "Error: environments/${ENV}.postman_environment.json not found!"
   exit 1
 fi
 
-# Copy DEV environment to LOCAL and replace values
-cat environments/DEV.postman_environment.json | \
-  sed 's/"name": "DEV"/"name": "LOCAL"/' | \
+echo "Using ${ENV} environment as base..."
+
+cat "environments/${ENV}.postman_environment.json" | \
+  sed 's/"name": "'"$ENV"'"/"name": "LOCAL"/' | \
   sed 's/"value": "YOUR_AUTH_TOKEN_HERE"/"value": "'"$GOREST_AUTH_TOKEN"'"/' | \
   sed 's/"value": "YOUR_REQRES_API_KEY_HERE"/"value": "'"$REQRES_API_KEY"'"/' \
   > environments/LOCAL.postman_environment.json
 
-echo "Created LOCAL.postman_environment.json with credentials from .env"
+echo "Created LOCAL.postman_environment.json from ${ENV} with credentials from ${ENV_FILE}"
